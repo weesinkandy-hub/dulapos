@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dula Printers - POS System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #27ae60;
+            --danger: #e74c3c;
+            --light: #f4f6f7;
+            --text: #333;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; color: var(--text); }
+        .hidden { display: none !important; }
+
+        /* Auth/Login Screen */
+        #auth-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: var(--primary); }
+        .auth-box { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 300px; }
+        .auth-box input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .auth-box button { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .auth-box button:hover { background: #219653; }
+        .toggle-auth { color: #3498db; cursor: pointer; font-size: 14px; margin-top: 15px; display: block; }
+
+        /* Main Dashboard */
+        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        header h2 { margin: 0; }
+        .logout-btn { background: var(--danger); border: none; padding: 8px 15px; color: white; border-radius: 5px; cursor: pointer; }
+
+        .container { display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; padding: 20px; }
+        
+        /* Product Grid */
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .item-card { background: white; padding: 20px 10px; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; border: 2px solid transparent; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .item-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .item-card h4 { margin: 0 0 10px 0; font-size: 15px; color: var(--secondary); }
+        .item-card p { margin: 0; color: var(--accent); font-weight: bold; font-size: 18px; }
+
+        /* Cart Section */
+        .cart-section { background: white; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; height: 85vh; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .cart-table-wrapper { flex-grow: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #eee; }
+        .remove-btn { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+
+        .total-area { font-size: 24px; font-weight: bold; text-align: right; margin: 15px 0; color: var(--primary); }
+        
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .actions button { padding: 12px; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-checkout { background: var(--primary); grid-column: span 2; font-size: 16px; }
+        .btn-wa { background: #25D366; }
+        .btn-pdf { background: #e74c3c; }
+
+        /* Reports Section */
+        .reports-section { margin-top: 30px; background: white; padding: 20px; border-radius: 10px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { padding: 20px; border-radius: 8px; color: white; text-align: center; }
+        .daily { background: #f1c40f; color: #333; } .monthly { background: #e67e22; } .yearly { background: #8e44ad; }
+        
+        .history-table th { background: var(--secondary); color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-box" id="login-box">
+            <h2>Dula Printers</h2>
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <span class="toggle-auth" onclick="toggleAuth()">Create New Account</span>
+            <p id="login-error" style="color: var(--danger); font-size: 13px;"></p>
+        </div>
+
+        <div class="auth-box hidden" id="register-box">
+            <h2>Create Account</h2>
+            <input type="text" id="reg-username" placeholder="New Username">
+            <input type="password" id="reg-password" placeholder="New Password">
+            <input type="password" id="reg-pin" placeholder="Admin PIN (0199)">
+            <button onclick="register()">Register</button>
+            <span class="toggle-auth" onclick="toggleAuth()">Back to Login</span>
+            <p id="reg-error" style="color: var(--danger); font-size: 13px;"></p>
+        </div>
+    </div>
+
+    <div id="main-system" class="hidden">
+        <header>
+            <h2>Dula Printers POS</h2>
+            <div>
+                <span id="logged-user" style="margin-right: 15px;"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <div style="overflow-y: auto; height: 85vh; padding-right: 10px;">
+                <h3>සේවාවන් (Services)</h3>
+                <div class="items-grid" id="items-container"></div>
+
+                <div class="reports-section">
+                    <h3>අලෙවි වාර්තා (Sales Reports)</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card daily"><h4>අද දින</h4><h2 id="stat-daily">0</h2></div>
+                        <div class="stat-card monthly"><h4>මෙම මාසය</h4><h2 id="stat-monthly">0</h2></div>
+                        <div class="stat-card yearly"><h4>මෙම වසර</h4><h2 id="stat-yearly">0</h2></div>
+                    </div>
+
+                    <h4>පෙර බිල්පත් (Sales History)</h4>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>දිනය / වේලාව</th>
+                                <th>සේවකයා</th>
+                                <th>මුදල (Rs.)</th>
+                                <th>ක්‍රියාව</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="cart-section">
+                <h3>නව බිල්පත</h3>
+                <div class="cart-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Item</th><th>Qty</th><th>Price</th><th></th></tr>
+                        </thead>
+                        <tbody id="cart-body"></tbody>
+                    </table>
+                </div>
+                
+                <div class="total-area">මුළු එකතුව: රු. <span id="cart-total">0</span></div>
+                
+                <input type="text" id="cust-phone" placeholder="Customer WhatsApp (e.g. 94771234567)" style="padding: 10px; margin-bottom: 10px; width: 95%; border: 1px solid #ccc;">
+                
+                <div class="actions">
+                    <button class="btn-pdf" onclick="downloadPDF()">Download PDF</button>
+                    <button class="btn-wa" onclick="sendWhatsApp()">WhatsApp</button>
+                    <button class="btn-checkout" onclick="checkout()">බිල්පත සේව් කරන්න (Save Sale)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Base (Local Storage)
+        const ADMIN_PIN = "0199";
+        let users = JSON.parse(localStorage.getItem('dula_users')) || [{username: 'admin', password: '123'}];
+        let sales = JSON.parse(localStorage.getItem('dula_sales')) || [];
+        let currentUser = null;
+        let cart = [];
+
+        const products = [
+            { id: 1, name: "Color Print", price: 30 },
+            { id: 2, name: "Black & White", price: 20 },
+            { id: 3, name: "Video Editing", price: 100 },
+            { id: 4, name: "AI Video Ad", price: 120 },
+            { id: 5, name: "Web Developing", price: 200 },
+            { id: 6, name: "Photo Copy", price: 10 },
+            { id: 7, name: "Atlas Pen", price: 30 },
+            { id: 8, name: "Tipex", price: 40 },
+            { id: 9, name: "Pencil", price: 25 },
+            { id: 10, name: "Passport Photo Edit", price: 100 },
+            { id: 11, name: "Photo Restore", price: 120 }
+        ];
+
+        // --- AUTHENTICATION ---
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+
+        function register() {
+            const u = document.getElementById('reg-username').value;
+            const p = document.getElementById('reg-password').value;
+            const pin = document.getElementById('reg-pin').value;
+            
+            if(pin !== ADMIN_PIN) return document.getElementById('reg-error').innerText = "Admin PIN අංකය වැරදියි!";
+            if(u === "" || p === "") return document.getElementById('reg-error').innerText = "විස්තර සම්පූර්ණ කරන්න!";
+            
+            users.push({username: u, password: p});
+            localStorage.setItem('dula_users', JSON.stringify(users));
+            alert("ගිණුම සාර්ථකව සෑදුවා!");
+            toggleAuth();
+        }
+
+        function login() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            
+            const user = users.find(x => x.username === u && x.password === p);
+            if(user) {
+                currentUser = user.username;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-system').classList.remove('hidden');
+                document.getElementById('logged-user').innerText = `User: ${currentUser}`;
+                initSystem();
+            } else {
+                document.getElementById('login-error').innerText = "Username හෝ Password වැරදියි!";
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        // --- POS SYSTEM ---
+        function initSystem() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            products.forEach(p => {
+                container.innerHTML += `
+                    <div class="item-card" onclick="addToCart(${p.id})">
+                        <h4>${p.name}</h4>
+                        <p>Rs.${p.price}</p>
+                    </div>`;
+            });
+            updateDashboard();
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            const existing = cart.find(c => c.id === id);
+            if(existing) existing.qty++;
+            else cart.push({...product, qty: 1});
+            renderCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cart-body');
+            tbody.innerHTML = '';
+            let total = 0;
+            cart.forEach((item, index) => {
+                const rowTotal = item.price * item.qty;
+                total += rowTotal;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.qty}</td>
+                        <td>${rowTotal}</td>
+                        <td><button class="remove-btn" onclick="removeFromCart(${index})">X</button></td>
+                    </tr>`;
+            });
+            document.getElementById('cart-total').innerText = total;
+        }
+
+        // --- SAVING & REPORTS ---
+        function checkout() {
+            if(cart.length === 0) return alert("බිල්පත හිස්!");
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            
+            const newSale = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                user: currentUser,
+                items: cart,
+                total: total
+            };
+            
+            sales.push(newSale);
+            localStorage.setItem('dula_sales', JSON.stringify(sales));
+            
+            cart = [];
+            renderCart();
+            updateDashboard();
+            alert("බිල්පත සාර්ථකව Save විය!");
+        }
+
+        function deleteSale(id) {
+            if(confirm("මෙම බිල්පත වාර්තා වලින් ඉවත් කිරීමට අවශ්‍යද?")) {
+                sales = sales.filter(s => s.id !== id);
+                localStorage.setItem('dula_sales', JSON.stringify(sales));
+                updateDashboard();
+            }
+        }
+
+        function updateDashboard() {
+            const now = new Date();
+            let dTotal = 0, mTotal = 0, yTotal = 0;
+            
+            const historyBody = document.getElementById('history-body');
+            historyBody.innerHTML = '';
+
+            // Sort sales newest first
+            const sortedSales = [...sales].sort((a,b) => b.id - a.id);
+
+            sortedSales.forEach(sale => {
+                const sDate = new Date(sale.date);
+                if(sDate.toDateString() === now.toDateString()) dTotal += sale.total;
+                if(sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear()) mTotal += sale.total;
+                if(sDate.getFullYear() === now.getFullYear()) yTotal += sale.total;
+
+                // Add to history table (show only last 10 for neatness)
+                historyBody.innerHTML += `
+                    <tr>
+                        <td>${sDate.toLocaleString()}</td>
+                        <td>${sale.user}</td>
+                        <td>Rs.${sale.total}</td>
+                        <td><button class="remove-btn" onclick="deleteSale(${sale.id})">Delete</button></td>
+                    </tr>`;
+            });
+
+            document.getElementById('stat-daily').innerText = `Rs. ${dTotal}`;
+            document.getElementById('stat-monthly').innerText = `Rs. ${mTotal}`;
+            document.getElementById('stat-yearly').innerText = `Rs. ${yTotal}`;
+        }
+
+        // --- PDF & WHATSAPP ---
+        function downloadPDF() {
+            if(cart.length === 0) return alert("බිල්පත හිස්!");
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(20);
+            doc.text("DULA PRINTERS", 80, 20);
+            doc.setFontSize(12);
+            doc.text("---------------------------------------------------------", 20, 30);
+            
+            let y = 40;
+            let total = 0;
+            cart.forEach(item => {
+                let rowTotal = item.price * item.qty;
+                total += rowTotal;
+                doc.text(`${item.name} (${item.qty})`, 20, y);
+                doc.text(`Rs. ${rowTotal}`, 150, y);
+                y += 10;
+            });
+            
+            doc.text("---------------------------------------------------------", 20, y);
+            doc.setFontSize(16);
+            doc.text(`Total Amount: Rs. ${total}`, 20, y + 10);
+            doc.setFontSize(10);
+            doc.text(`Cashier: ${currentUser} | Date: ${new Date().toLocaleDateString()}`, 20, y + 25);
+            
+            doc.save("Dula_Printers_Bill.pdf");
+        }
+
+        function sendWhatsApp() {
+            if(cart.length === 0) return alert("බිල්පත හිස්!");
+            const phone = document.getElementById('cust-phone').value;
+            if(!phone) return alert("WhatsApp අංකය ඇතුලත් කරන්න!");
+
+            let msg = "*Dula Printers - Receipt*%0A------------------------%0A";
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.qty;
+                msg += `${item.name} x ${item.qty} = Rs.${item.price * item.qty}%0A`;
+            });
+            msg += `------------------------%0A*Grand Total: Rs.${total}*%0A%0AThank You!`;
+            
+            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+        }
+    </script>
+</body>
+</html>
