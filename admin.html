@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dula Printers - Professional POS & Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --primary: #3b82f6;
+            --secondary: #1e293b;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Login Modal */
+        #login-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 40px; border-radius: 15px; width: 350px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: center; }
+        .login-card h2 { margin-bottom: 20px; color: var(--secondary); }
+
+        /* Sidebar Navigation */
+        aside { width: var(--sidebar-width); background: var(--secondary); color: white; display: none; flex-direction: column; padding: 20px 0; }
+        .brand { padding: 0 20px 30px; font-size: 22px; font-weight: bold; border-bottom: 1px solid #334155; margin-bottom: 20px; }
+        .nav-item { padding: 12px 25px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover { background: #334155; }
+        .nav-item.active { background: var(--primary); }
+
+        /* Main Content */
+        main { flex: 1; overflow-y: auto; display: none; flex-direction: column; }
+        header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .content-area { padding: 30px; }
+
+        /* Cards & Grids */
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
+        .stat-box h4 { margin: 0; color: #64748b; font-size: 14px; text-transform: uppercase; }
+        .stat-box p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: var(--secondary); }
+
+        /* POS Layout */
+        .pos-container { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .item-card { background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .item-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        .cart-panel { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 0; }
+        .cart-list { max-height: 300px; overflow-y: auto; margin: 15px 0; border-top: 1px solid #eee; }
+        .cart-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f8fafc; }
+
+        /* Charts */
+        .charts-container { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .chart-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Tables */
+        .data-card { background: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; background: #f8fafc; padding: 12px; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+
+        input, button { padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        .btn-primary { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600; }
+        .btn-danger { background: var(--danger); color: white; border: none; cursor: pointer; }
+
+        #bill-pdf-template { display: none; font-family: monospace; padding: 20px; width: 300px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>Dula Printers</h2>
+            <p>පද්ධතියට ඇතුල් වීමට PIN අංකය ලබා දෙන්න</p>
+            <input type="text" id="username" placeholder="ඔබේ නම" style="width: 100%; margin-bottom: 10px;"><br>
+            <input type="password" id="pin" placeholder="PIN (0199)" style="width: 100%; margin-bottom: 20px;">
+            <button class="btn-primary" id="loginBtn" style="width: 100%;">Login</button>
+        </div>
+    </div>
+
+    <aside id="sidebar">
+        <div class="brand">DULA POS</div>
+        <div class="nav-item active" onclick="showPage('pos')">🛒 POS System</div>
+        <div class="nav-item" onclick="showPage('admin')">📊 Admin Panel</div>
+        <div class="nav-item" style="margin-top: auto; color: var(--danger);" onclick="logout()">🚪 Logout</div>
+    </aside>
+
+    <main id="main-content">
+        <header>
+            <h3 id="page-title">POS System</h3>
+            <div id="user-info" style="font-weight: 600;"></div>
+        </header>
+
+        <div class="content-area">
+            
+            <div id="pos-page">
+                <div class="pos-container">
+                    <div class="item-grid" id="item-grid"></div>
+                    <div class="cart-panel">
+                        <h3>Current Order</h3>
+                        <div class="cart-list" id="cart-list"></div>
+                        <div style="font-size: 22px; font-weight: bold; margin: 15px 0;">Total: රු.<span id="total-amount">0</span></div>
+                        <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="checkout()">Print & Save Bill</button>
+                        <button class="btn-danger" style="width: 100%;" onclick="clearCart()">Clear Cart</button>
+                        
+                        <div id="after-sale-btns" style="display:none; margin-top: 15px;">
+                            <button onclick="downloadPDF()" style="background:#f59e0b; width:100%; margin-bottom:5px;" class="btn-primary">Download PDF</button>
+                            <button onclick="shareWA()" style="background:#25d366; width:100%;" class="btn-primary">WhatsApp Share</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-page" style="display: none;">
+                <div class="grid-4">
+                    <div class="stat-box"><h4>Today Sales</h4><p>රු.<span id="stat-today">0</span></p></div>
+                    <div class="stat-box"><h4>Monthly</h4><p>රු.<span id="stat-month">0</span></p></div>
+                    <div class="stat-box"><h4>Yearly</h4><p>රු.<span id="stat-year">0</span></p></div>
+                    <div class="stat-box" style="border-color: var(--accent);"><h4>Total Bills</h4><p id="stat-count">0</p></div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h4 style="margin-top:0">Top Selling Items</h4>
+                        <div id="top-items-list" style="font-size: 14px;"></div>
+                    </div>
+                </div>
+
+                <div class="data-card">
+                    <h4>Staff Performance</h4>
+                    <table id="staff-table">
+                        <thead><tr><th>Staff Name</th><th>Today</th><th>Month</th><th>Year</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="data-card">
+                    <h4>Recent Transactions</h4>
+                    <table>
+                        <thead><tr><th>Time</th><th>Staff</th><th>Total</th><th>Action</th></tr></thead>
+                        <tbody id="txn-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="bill-pdf-template">
+        <center><h2>DULA PRINTERS</h2><p id="b-date"></p></center>
+        <hr>
+        <div id="b-items"></div>
+        <hr>
+        <h3 align="right">Total: Rs.<span id="b-total"></span></h3>
+        <center><p>Thank You!</p></center>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQ1IbJszeK7LmrJLprR9XgeKtkBdC5ZeI",
+            authDomain: "dulapos-b4724.firebaseapp.com",
+            databaseURL: "https://dulapos-b4724-default-rtdb.firebaseio.com",
+            projectId: "dulapos-b4724",
+            storageBucket: "dulapos-b4724.firebasestorage.app",
+            messagingSenderId: "30878147224",
+            appId: "1:30878147224:web:c83c61339445997dd126ed"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const products = [
+            { id: 1, name: "Color Print", price: 30 }, { id: 2, name: "Black & White", price: 20 },
+            { id: 3, name: "Video Editing", price: 100 }, { id: 4, name: "AI Video Ad", price: 120 },
+            { id: 5, name: "Web Dev", price: 200 }, { id: 6, name: "Photo Copy", price: 10 },
+            { id: 7, name: "Atlas Pen", price: 30 }, { id: 8, name: "Tipex", price: 40 },
+            { id: 9, name: "Pencil", price: 25 }, { id: 10, name: "Passport Photo", price: 100 },
+            { id: 11, name: "Photo Restore", price: 120 }
+        ];
+
+        let cart = [];
+        let currentUser = "";
+        let salesChart = null;
+
+        // --- AUTH ---
+        document.getElementById('loginBtn').onclick = () => {
+            const user = document.getElementById('username').value;
+            const pin = document.getElementById('pin').value;
+            if(pin === '0199' && user) {
+                currentUser = user;
+                localStorage.setItem('dula_user', user);
+                initSystem();
+            } else { alert("වැරදි PIN අංකයකි!"); }
+        };
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        function initSystem() {
+            currentUser = localStorage.getItem('dula_user');
+            if(!currentUser) return;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'flex';
+            document.getElementById('user-info').innerText = "Active: " + currentUser;
+            renderProducts();
+            loadSalesData();
+        }
+
+        // --- POS ---
+        function renderProducts() {
+            const grid = document.getElementById('item-grid');
+            grid.innerHTML = products.map(p => `
+                <div class="item-card" onclick="addToCart(${p.id})">
+                    <strong>${p.name}</strong><br>රු.${p.price}
+                </div>
+            `).join('');
+        }
+
+        window.addToCart = (id) => {
+            const p = products.find(x => x.id === id);
+            const exists = cart.find(x => x.id === id);
+            if(exists) exists.qty++;
+            else cart.push({...p, qty: 1});
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-list');
+            let total = 0;
+            list.innerHTML = cart.map((item, idx) => {
+                total += (item.price * item.qty);
+                return `<div class="cart-row"><span>${item.name} x${item.qty}</span><span>රු.${item.price * item.qty}</span></div>`;
+            }).join('');
+            document.getElementById('total-amount').innerText = total;
+            document.getElementById('after-sale-btns').style.display = 'none';
+        }
+
+        window.clearCart = () => { cart = []; updateCartUI(); };
+
+        let lastBill = null;
+        window.checkout = () => {
+            if(cart.length === 0) return;
+            const total = parseInt(document.getElementById('total-amount').innerText);
+            const billData = {
+                user: currentUser,
+                items: cart,
+                total: total,
+                date: new Date().toISOString()
+            };
+            push(ref(db, 'sales'), billData).then(() => {
+                lastBill = billData;
+                alert("ගනුදෙනුව සාර්ථකයි!");
+                document.getElementById('after-sale-btns').style.display = 'block';
+                cart = [];
+                updateCartUI();
+            });
+        };
+
+        // --- SHARES ---
+        window.downloadPDF = () => {
+            const b = lastBill;
+            document.getElementById('b-date').innerText = new Date(b.date).toLocaleString();
+            document.getElementById('b-total').innerText = b.total;
+            document.getElementById('b-items').innerHTML = b.items.map(i => `<div>${i.name} x${i.qty} = ${i.price*i.qty}</div>`).join('');
+            const el = document.getElementById('bill-pdf-template');
+            el.style.display = 'block';
+            html2pdf().from(el).save('Bill.pdf').then(()=> el.style.display='none');
+        };
+
+        window.shareWA = () => {
+            const num = prompt("Phone Number (94...):");
+            let txt = `*DULA PRINTERS*\nTotal: Rs.${lastBill.total}\nItems: ${lastBill.items.map(i=>i.name).join(', ')}`;
+            window.open(`https://wa.me/${num}?text=${encodeURIComponent(txt)}`);
+        };
+
+        // --- ADMIN ---
+        window.showPage = (page) => {
+            document.getElementById('pos-page').style.display = page === 'pos' ? 'block' : 'none';
+            document.getElementById('admin-page').style.display = page === 'admin' ? 'block' : 'none';
+            document.getElementById('page-title').innerText = page === 'pos' ? 'POS System' : 'Admin Dashboard';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.target.classList.add('active');
+        };
+
+        function loadSalesData() {
+            onValue(ref(db, 'sales'), (snap) => {
+                const data = snap.val();
+                if(!data) return;
+                
+                const sales = Object.entries(data).map(([id, val]) => ({id, ...val}));
+                const now = new Date();
+                
+                let dayT = 0, monthT = 0, yearT = 0;
+                let itemStats = {};
+                let staffStats = {};
+                let chartData = { labels: [], totals: [] };
+
+                sales.reverse().forEach(s => {
+                    const d = new Date(s.date);
+                    // Stats
+                    if(d.toDateString() === now.toDateString()) dayT += s.total;
+                    if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) monthT += s.total;
+                    if(d.getFullYear() === now.getFullYear()) yearT += s.total;
+
+                    // Staff
+                    if(!staffStats[s.user]) staffStats[s.user] = { d:0, m:0, y:0 };
+                    if(d.toDateString() === now.toDateString()) staffStats[s.user].d += s.total;
+                    if(d.getMonth() === now.getMonth()) staffStats[s.user].m += s.total;
+                    staffStats[s.user].y += s.total;
+
+                    // Items
+                    s.items.forEach(i => {
+                        itemStats[i.name] = (itemStats[i.name] || 0) + (i.price * i.qty);
+                    });
+                });
+
+                // Update UI
+                document.getElementById('stat-today').innerText = dayT;
+                document.getElementById('stat-month').innerText = monthT;
+                document.getElementById('stat-year').innerText = yearT;
+                document.getElementById('stat-count').innerText = sales.length;
+
+                // Staff Table
+                const sTable = document.querySelector('#staff-table tbody');
+                sTable.innerHTML = Object.keys(staffStats).map(name => `
+                    <tr><td>${name}</td><td>රු.${staffStats[name].d}</td><td>රු.${staffStats[name].m}</td><td>රු.${staffStats[name].y}</td></tr>
+                `).join('');
+
+                // Txn Table
+                const tTable = document.getElementById('txn-table');
+                tTable.innerHTML = sales.slice(0, 10).map(s => `
+                    <tr><td>${new Date(s.date).toLocaleTimeString()}</td><td>${s.user}</td><td>රු.${s.total}</td>
+                    <td><button class="btn-danger" style="padding:4px 8px" onclick="deleteSale('${s.id}')">Delete</button></td></tr>
+                `).join('');
+
+                // Top Items
+                const sortedItems = Object.entries(itemStats).sort((a,b) => b[1]-a[1]);
+                document.getElementById('top-items-list').innerHTML = sortedItems.map(i => `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span>${i[0]}</span><b>රු.${i[1]}</b>
+                    </div>
+                `).join('');
+
+                updateChart(sales.slice(0,7).reverse());
+            });
+        }
+
+        window.deleteSale = (id) => {
+            if(confirm("මකා දැමීමට අවශ්‍යද?")) remove(ref(db, `sales/${id}`));
+        };
+
+        function updateChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if(salesChart) salesChart.destroy();
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => new Date(d.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})),
+                    datasets: [{ label: 'Recent Sales Amount', data: data.map(d => d.total), borderColor: '#3b82f6', tension: 0.3 }]
+                }
+            });
+        }
+
+        // Run
+        if(localStorage.getItem('dula_user')) initSystem();
+    </script>
+</body>
+</html>

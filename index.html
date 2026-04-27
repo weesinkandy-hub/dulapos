@@ -3,119 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dula Printers - Cloud POS</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>DULA PRINTERS - POS & MANAGEMENT SYSTEM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root {
-            --primary: #2c3e50; --secondary: #34495e; --accent: #27ae60;
-            --danger: #e74c3c; --light: #f4f6f7; --text: #333;
+            --bg: #f0f2f5;
+            --sidebar: #1a1c23;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --white: #ffffff;
+            --text-main: #1f2937;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; color: var(--text); }
-        .hidden { display: none !important; }
-        
-        /* Auth Screen */
-        #auth-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: var(--primary); }
-        .auth-box { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px; }
-        .auth-box input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        .auth-box button { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .toggle-auth { color: #3498db; cursor: pointer; font-size: 14px; margin-top: 15px; display: block; }
 
-        /* Dashboard */
-        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .container { display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; padding: 20px; }
-        
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        .item-card { background: white; padding: 15px 5px; border-radius: 8px; text-align: center; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
-        .item-card:hover { border-color: var(--accent); background: #f9fffb; }
-        .item-card h4 { margin: 0; font-size: 14px; }
-        .item-card p { margin: 5px 0 0 0; color: var(--accent); font-weight: bold; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        .cart-section { background: white; padding: 20px; border-radius: 10px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .cart-table { flex-grow: 1; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { text-align: left; padding: 10px 5px; border-bottom: 1px solid #eee; }
-        
-        .total-area { font-size: 22px; font-weight: bold; text-align: right; margin: 15px 0; color: var(--primary); }
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn { padding: 10px; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-save { background: var(--primary); grid-column: span 2; }
-        .btn-wa { background: #25D366; } .btn-pdf { background: #e74c3c; }
+        /* Login Screen */
+        #login-overlay { position: fixed; inset: 0; background: var(--sidebar); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--white); padding: 40px; border-radius: 20px; width: 380px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
+        .login-card h1 { margin-bottom: 25px; color: var(--sidebar); font-size: 24px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        .btn-login { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-login:hover { background: #2563eb; }
 
-        /* Stats */
-        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-card { padding: 15px; border-radius: 8px; color: white; text-align: center; }
+        /* Sidebar */
+        aside { width: 260px; background: var(--sidebar); color: white; display: none; flex-direction: column; transition: 0.3s; }
+        .nav-logo { padding: 30px 20px; font-size: 20px; font-weight: 700; border-bottom: 1px solid #2d2f39; text-align: center; color: var(--primary); }
+        .nav-menu { flex: 1; padding: 20px 0; }
+        .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; color: #9ca3af; }
+        .nav-item:hover, .nav-item.active { background: #2d2f39; color: white; border-left: 4px solid var(--primary); }
+        .logout-area { padding: 20px; border-top: 1px solid #2d2f39; }
+
+        /* Main Content */
+        main { flex: 1; overflow-y: auto; display: none; padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* POS Page */
+        .pos-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; height: calc(100vh - 150px); }
+        .items-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; overflow-y: auto; padding-right: 10px; }
+        .item-card { background: white; padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .item-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+        .item-card h4 { margin: 10px 0 5px; font-size: 15px; }
+        .item-card .price { color: var(--primary); font-weight: 700; font-size: 18px; }
+
+        .checkout-panel { background: white; border-radius: 20px; padding: 25px; display: flex; flex-direction: column; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .cart-list { flex: 1; overflow-y: auto; margin: 20px 0; border-top: 1px solid #f3f4f6; }
+        .cart-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+        .total-box { font-size: 28px; font-weight: 800; text-align: right; margin-bottom: 20px; color: var(--sidebar); }
+
+        /* Admin Page */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .stat-card small { color: #6b7280; text-transform: uppercase; font-size: 11px; font-weight: 700; }
+        .stat-card h2 { margin: 10px 0 0; font-size: 24px; }
+
+        .admin-flex { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .chart-card, .data-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 12px; background: #f9fafb; color: #4b5563; font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+
+        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 10px; }
+        .btn-pay { background: var(--success); color: white; }
+        .btn-clear { background: #f3f4f6; color: var(--text-main); }
+
+        /* PDF & Print Utility */
+        #printable-bill { display: none; width: 300px; padding: 20px; background: white; color: black; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="auth-box" id="login-box">
-            <h2>Dula Printers</h2>
-            <input type="text" id="l-user" placeholder="Username">
-            <input type="password" id="l-pass" placeholder="Password">
-            <button onclick="login()">Login</button>
-            <span class="toggle-auth" onclick="toggleAuth()">Create Account</span>
-            <p id="l-err" style="color:red; font-size:12px"></p>
-        </div>
-        <div class="auth-box hidden" id="reg-box">
-            <h2>Register Staff</h2>
-            <input type="text" id="r-user" placeholder="New Username">
-            <input type="password" id="r-pass" placeholder="New Password">
-            <input type="password" id="r-pin" placeholder="Admin PIN (0199)">
-            <button onclick="register()">Register</button>
-            <span class="toggle-auth" onclick="toggleAuth()">Back to Login</span>
-            <p id="r-err" style="color:red; font-size:12px"></p>
+    <div id="login-overlay">
+        <div class="login-card">
+            <h1>DULA PRINTERS</h1>
+            <p style="color:#6b7280; margin-bottom:20px;">කරුණාකර පිවිසෙන්න</p>
+            <input type="text" id="cashier-name" placeholder="Cashier Name (eg: Kamal)">
+            <input type="password" id="pin-code" placeholder="PIN Code (0199)">
+            <button class="btn-login" onclick="handleLogin()">Login to System</button>
         </div>
     </div>
 
-    <div id="main-system" class="hidden">
-        <header>
-            <h3>Dula Printers POS</h3>
-            <div><span id="user-display"></span> | <button onclick="location.reload()" style="background:none; border:1px solid white; color:white; cursor:pointer">Logout</button></div>
-        </header>
+    <aside id="sidebar">
+        <div class="nav-logo">DULA POS v2.0</div>
+        <div class="nav-menu">
+            <div class="nav-item active" id="nav-pos" onclick="switchPage('pos')">🛒 POS Terminal</div>
+            <div class="nav-item" id="nav-admin" onclick="switchPage('admin')">📊 Admin Dashboard</div>
+        </div>
+        <div class="logout-area">
+            <button class="btn btn-clear" style="background: #374151; color: white;" onclick="logout()">Logout</button>
+        </div>
+    </aside>
 
-        <div class="container">
+    <main id="main-content">
+        <div class="header">
             <div>
-                <div class="items-grid" id="menu"></div>
-                
-                <div style="background:white; padding:20px; margin-top:20px; border-radius:10px">
-                    <h4>අලෙවි වාර්තා (Real-time)</h4>
-                    <div class="stats">
-                        <div class="stat-card" style="background:#f1c40f; color:#333">අද: <br><b id="s-day">0</b></div>
-                        <div class="stat-card" style="background:#e67e22">මාසය: <br><b id="s-month">0</b></div>
-                        <div class="stat-card" style="background:#8e44ad">වසර: <br><b id="s-year">0</b></div>
-                    </div>
-                    <table style="margin-top:20px">
-                        <thead><tr><th>Time</th><th>User</th><th>Total</th><th>Action</th></tr></thead>
-                        <tbody id="history"></tbody>
-                    </table>
-                </div>
+                <h2 id="page-title" style="margin:0">POS Terminal</h2>
+                <small id="current-date" style="color: #6b7280;"></small>
             </div>
+            <div style="text-align: right;">
+                <div style="font-weight:700" id="display-user">Admin</div>
+                <small style="color: var(--success);">Online - Cloud Sync</small>
+            </div>
+        </div>
 
-            <div class="cart-section">
-                <h4>නව බිල්පත</h4>
-                <div class="cart-table">
-                    <table>
-                        <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th></th></tr></thead>
-                        <tbody id="cart-items"></tbody>
-                    </table>
+        <div id="pos-section" class="pos-grid">
+            <div class="items-container" id="items-list">
                 </div>
-                <div class="total-area">Total: Rs. <span id="g-total">0</span></div>
-                <input type="text" id="phone" placeholder="WhatsApp (9477...)" style="width:90%; padding:8px; margin-bottom:10px">
-                <div class="actions">
-                    <button class="btn btn-pdf" onclick="doPDF()">PDF</button>
-                    <button class="btn btn-wa" onclick="doWA()">WhatsApp</button>
-                    <button class="btn btn-save" id="btn-save" onclick="saveSale()">Save to Cloud</button>
+            <div class="checkout-panel">
+                <h3 style="margin:0">Active Bill</h3>
+                <div class="cart-list" id="cart-list"></div>
+                <div class="total-box">රු.<span id="cart-total">0</span></div>
+                <button class="btn btn-pay" onclick="processSale()">Complete Order & Save</button>
+                <button class="btn btn-clear" onclick="clearCart()">Cancel Bill</button>
+                
+                <div id="after-sale-actions" style="display:none; margin-top:15px; border-top:2px dashed #eee; padding-top:15px;">
+                    <button class="btn" style="background:#6366f1; color:white" onclick="downloadBill()">📥 Download Receipt</button>
+                    <button class="btn" style="background:#25D366; color:white" onclick="sendWhatsApp()">💬 WhatsApp Bill</button>
                 </div>
             </div>
         </div>
+
+        <div id="admin-section" style="display:none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <small>Today Revenue</small>
+                    <h2 id="stat-day">රු.0</h2>
+                </div>
+                <div class="stat-card">
+                    <small>Monthly Revenue</small>
+                    <h2 id="stat-month">රු.0</h2>
+                </div>
+                <div class="stat-card">
+                    <small>Yearly Total</small>
+                    <h2 id="stat-year">රු.0</h2>
+                </div>
+                <div class="stat-card">
+                    <small>Total Invoices</small>
+                    <h2 id="stat-count">0</h2>
+                </div>
+            </div>
+
+            <div class="admin-flex">
+                <div class="chart-card">
+                    <h3>Recent Sales Trend</h3>
+                    <canvas id="salesChart" height="150"></canvas>
+                </div>
+                <div class="data-card">
+                    <h3>Top Items</h3>
+                    <div id="top-items"></div>
+                </div>
+            </div>
+
+            <div class="data-card" style="margin-top:20px;">
+                <h3>Recent Transactions</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Cashier</th>
+                            <th>Time</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="printable-bill">
+        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px;">
+            <h2 style="margin:0">DULA PRINTERS</h2>
+            <p style="font-size:12px; margin:5px 0;">Digital Printing & IT Solutions</p>
+        </div>
+        <div style="font-size: 12px; margin: 10px 0;">
+            Date: <span id="bill-date-ui"></span><br>
+            Cashier: <span id="bill-cashier-ui"></span>
+        </div>
+        <table style="width:100%; font-size:12px; border:none;" id="bill-items-ui"></table>
+        <div style="text-align: right; border-top: 1px dashed #000; margin-top:10px; padding-top:10px; font-weight:bold;">
+            TOTAL: Rs. <span id="bill-total-ui"></span>
+        </div>
+        <center style="margin-top:20px; font-size:10px;">Thank You! Software by Gemini</center>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Firebase Configuration (ඔබ ලබාදුන් විස්තර)
         const firebaseConfig = {
             apiKey: "AIzaSyDQ1IbJszeK7LmrJLprR9XgeKtkBdC5ZeI",
             authDomain: "dulapos-b4724.firebaseapp.com",
@@ -127,124 +208,222 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // State
-        const ADMIN_PIN = "0199";
-        let cart = [], users = [], sales = [], currentUser = "";
+        const db = getDatabase(app);
 
         const products = [
-            { id: 1, n: "Color Print", p: 30 }, { id: 2, n: "Black & White", p: 20 },
-            { id: 3, n: "Video Editing", p: 100 }, { id: 4, n: "AI Video Ad", p: 120 },
-            { id: 5, n: "Web Developing", p: 200 }, { id: 6, n: "Photo Copy", p: 10 },
-            { id: 7, n: "Atlas Pen", p: 30 }, { id: 8, n: "Tipex", p: 40 },
-            { id: 9, n: "Pencil", p: 25 }, { id: 10, n: "Passport Edit", p: 100 },
-            { id: 11, n: "Photo Restore", p: 120 }
+            { name: "Color Print", price: 30 }, { name: "Black & White", price: 20 },
+            { name: "Video Editing", price: 100 }, { name: "AI Video Ad", price: 120 },
+            { name: "Web Developing", price: 200 }, { name: "Photo Copy", price: 10 },
+            { name: "Atlas Pen", price: 30 }, { name: "Tipex", price: 40 },
+            { name: "Pencil", price: 25 }, { name: "Passport Photo", price: 100 },
+            { name: "Photo Restore", price: 120 }
         ];
 
-        // Auth Logic
-        window.toggleAuth = () => {
-            document.getElementById('login-box').classList.toggle('hidden');
-            document.getElementById('reg-box').classList.toggle('hidden');
+        let cart = [];
+        let currentCashier = "";
+        let lastOrder = null;
+        let chartInstance = null;
+
+        // Login Logic
+        window.handleLogin = () => {
+            const name = document.getElementById('cashier-name').value;
+            const pin = document.getElementById('pin-code').value;
+            if(pin === '0199' && name.trim() !== "") {
+                currentCashier = name;
+                localStorage.setItem('cashier', name);
+                showSystem();
+            } else {
+                alert("වැරදි PIN අංකයක් හෝ නමක්!");
+            }
         };
 
-        window.register = async () => {
-            const u = document.getElementById('r-user').value, p = document.getElementById('r-pass').value, pin = document.getElementById('r-pin').value;
-            if(pin !== ADMIN_PIN) return document.getElementById('r-err').innerText = "Wrong Admin PIN!";
-            await addDoc(collection(db, "users"), { u, p });
-            alert("Account Created!"); toggleAuth();
-        };
-
-        window.login = () => {
-            const u = document.getElementById('l-user').value, p = document.getElementById('l-pass').value;
-            const found = users.find(x => x.u === u && x.p === p);
-            if(found || (u === 'admin' && p === '0199')) {
-                currentUser = u;
-                document.getElementById('auth-screen').className = 'hidden';
-                document.getElementById('main-system').className = '';
-                document.getElementById('user-display').innerText = u;
-                renderMenu();
-            } else document.getElementById('l-err').innerText = "Invalid Credentials!";
-        };
-
-        // Database Sync
-        onSnapshot(collection(db, "users"), s => { users = s.docs.map(d => d.data()); });
-        onSnapshot(query(collection(db, "sales"), orderBy("t", "desc")), s => {
-            sales = s.docs.map(d => ({ id: d.id, ...d.data() }));
-            updateStats();
-        });
-
-        // POS Logic
-        function renderMenu() {
-            const m = document.getElementById('menu');
-            products.forEach(p => {
-                m.innerHTML += `<div class="item-card" onclick="addToCart(${p.id})"><h4>${p.n}</h4><p>Rs.${p.p}</p></div>`;
-            });
+        function showSystem() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('display-user').innerText = currentCashier;
+            renderItems();
+            loadAdminStats();
         }
 
-        window.addToCart = (id) => {
-            const item = products.find(p => p.id === id);
-            const exist = cart.find(c => c.id === id);
-            if(exist) exist.q++; else cart.push({ ...item, q: 1 });
-            renderCart();
+        // POS Functions
+        function renderItems() {
+            const container = document.getElementById('items-list');
+            container.innerHTML = products.map((p, idx) => `
+                <div class="item-card" onclick="addToCart(${idx})">
+                    <h4>${p.name}</h4>
+                    <div class="price">රු.${p.price}</div>
+                </div>
+            `).join('');
+        }
+
+        window.addToCart = (idx) => {
+            const p = products[idx];
+            const exists = cart.find(i => i.name === p.name);
+            if(exists) exists.qty++;
+            else cart.push({...p, qty: 1});
+            updateCartUI();
         };
 
-        window.rem = (i) => { cart.splice(i, 1); renderCart(); };
-
-        function renderCart() {
-            const b = document.getElementById('cart-items'); b.innerHTML = '';
+        function updateCartUI() {
+            const list = document.getElementById('cart-list');
             let total = 0;
-            cart.forEach((c, i) => {
-                total += c.p * c.q;
-                b.innerHTML += `<tr><td>${c.n}</td><td>${c.q}</td><td>${c.p*c.q}</td><td><button onclick="rem(${i})" style="color:red">x</button></td></tr>`;
-            });
-            document.getElementById('g-total').innerText = total;
+            list.innerHTML = cart.map(i => {
+                total += (i.price * i.qty);
+                return `<div class="cart-item"><span>${i.name} x ${i.qty}</span><b>${i.price * i.qty}</b></div>`;
+            }).join('');
+            document.getElementById('cart-total').innerText = total;
+            document.getElementById('after-sale-actions').style.display = 'none';
         }
 
-        window.saveSale = async () => {
-            if(!cart.length) return;
-            document.getElementById('btn-save').innerText = "Saving...";
-            const total = cart.reduce((a, b) => a + (b.p * b.q), 0);
-            await addDoc(collection(db, "sales"), { t: Date.now(), user: currentUser, total, items: cart });
-            cart = []; renderCart();
-            document.getElementById('btn-save').innerText = "Save to Cloud";
+        window.clearCart = () => { cart = []; updateCartUI(); };
+
+        window.processSale = () => {
+            if(cart.length === 0) return;
+            const saleData = {
+                cashier: currentCashier,
+                items: cart,
+                total: parseInt(document.getElementById('cart-total').innerText),
+                timestamp: new Date().toISOString()
+            };
+
+            push(ref(db, 'sales'), saleData).then(() => {
+                lastOrder = saleData;
+                document.getElementById('after-sale-actions').style.display = 'block';
+                alert("විකුණුම් දත්ත ගබඩා විය!");
+                cart = [];
+                updateCartUI();
+            });
         };
 
-        window.delSale = async (id) => { if(confirm("Delete this record?")) await deleteDoc(doc(db, "sales", id)); };
+        // Admin Functions
+        window.switchPage = (page) => {
+            document.getElementById('pos-section').style.display = page === 'pos' ? 'grid' : 'none';
+            document.getElementById('admin-section').style.display = page === 'admin' ? 'block' : 'none';
+            document.getElementById('page-title').innerText = page === 'pos' ? 'POS Terminal' : 'Management Dashboard';
+            document.getElementById('nav-pos').classList.toggle('active', page === 'pos');
+            document.getElementById('nav-admin').classList.toggle('active', page === 'admin');
+        };
 
-        function updateStats() {
-            const now = new Date();
-            let d=0, m=0, y=0;
-            const h = document.getElementById('history'); h.innerHTML = '';
-            sales.forEach(s => {
-                const sd = new Date(s.t);
-                if(sd.toDateString() === now.toDateString()) d += s.total;
-                if(sd.getMonth() === now.getMonth()) m += s.total;
-                y += s.total;
-                h.innerHTML += `<tr><td>${sd.toLocaleTimeString()}</td><td>${s.user}</td><td>${s.total}</td><td><button onclick="delSale('${s.id}')">Del</button></td></tr>`;
+        function loadAdminStats() {
+            onValue(ref(db, 'sales'), (snapshot) => {
+                const data = snapshot.val();
+                if(!data) return;
+
+                const sales = Object.keys(data).map(id => ({ id, ...data[id] }));
+                const now = new Date();
+                let dayT = 0, monthT = 0, yearT = 0;
+                let productStats = {};
+
+                sales.forEach(s => {
+                    const sDate = new Date(s.timestamp);
+                    if(sDate.toDateString() === now.toDateString()) dayT += s.total;
+                    if(sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear()) monthT += s.total;
+                    if(sDate.getFullYear() === now.getFullYear()) yearT += s.total;
+                    
+                    s.items.forEach(item => {
+                        productStats[item.name] = (productStats[item.name] || 0) + item.qty;
+                    });
+                });
+
+                document.getElementById('stat-day').innerText = `රු.${dayT}`;
+                document.getElementById('stat-month').innerText = `රු.${monthT}`;
+                document.getElementById('stat-year').innerText = `රු.${yearT}`;
+                document.getElementById('stat-count').innerText = sales.length;
+
+                renderSalesTable(sales.slice(-10).reverse());
+                renderTopItems(productStats);
+                renderChart(sales.slice(-7));
             });
-            document.getElementById('s-day').innerText = d;
-            document.getElementById('s-month').innerText = m;
-            document.getElementById('s-year').innerText = y;
         }
 
-        // Output
-        window.doPDF = () => {
-            const { jsPDF } = window.jspdf; const doc = new jsPDF();
-            doc.text("DULA PRINTERS - BILL", 10, 10);
-            let y = 20;
-            cart.forEach(c => { doc.text(`${c.n} x ${c.q} = ${c.p*c.q}`, 10, y); y+=10; });
-            doc.text(`TOTAL: Rs. ${document.getElementById('g-total').innerText}`, 10, y+10);
-            doc.save("bill.pdf");
+        function renderSalesTable(sales) {
+            const body = document.getElementById('sales-table-body');
+            body.innerHTML = sales.map(s => `
+                <tr>
+                    <td>#${s.id.slice(-5)}</td>
+                    <td>${s.cashier}</td>
+                    <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
+                    <td>රු.${s.total}</td>
+                    <td><button onclick="deleteTxn('${s.id}')" style="color:red; background:none; border:none; cursor:pointer;">Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.deleteTxn = (id) => {
+            if(confirm("මෙම ගනුදෙනුව මකා දැමීමට අවශ්‍යද?")) remove(ref(db, `sales/${id}`));
         };
 
-        window.doWA = () => {
-            const p = document.getElementById('phone').value;
-            let txt = "*Dula Printers Bill*%0A";
-            cart.forEach(c => { txt += `${c.n} x ${c.q} = ${c.p*c.q}%0A`; });
-            txt += "*Total: " + document.getElementById('g-total').innerText + "*";
-            window.open(`https://wa.me/${p}?text=${txt}`);
+        function renderTopItems(stats) {
+            const sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            document.getElementById('top-items').innerHTML = sorted.map(i => `
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+                    <span>${i[0]}</span><b>${i[1]} Sold</b>
+                </div>
+            `).join('');
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => new Date(d.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})),
+                    datasets: [{
+                        label: 'Sale Amount',
+                        data: data.map(d => d.total),
+                        borderColor: '#3b82f6',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                    }]
+                },
+                options: { plugins: { legend: { display: false } } }
+            });
+        }
+
+        // Utility
+        window.downloadBill = () => {
+            if(!lastOrder) return;
+            const uiDate = document.getElementById('bill-date-ui');
+            const uiCashier = document.getElementById('bill-cashier-ui');
+            const uiItems = document.getElementById('bill-items-ui');
+            const uiTotal = document.getElementById('bill-total-ui');
+
+            uiDate.innerText = new Date(lastOrder.timestamp).toLocaleString();
+            uiCashier.innerText = lastOrder.cashier;
+            uiTotal.innerText = lastOrder.total;
+            uiItems.innerHTML = lastOrder.items.map(i => `<tr><td>${i.name} x${i.qty}</td><td align="right">${i.price * i.qty}</td></tr>`).join('');
+
+            const bill = document.getElementById('printable-bill');
+            bill.style.display = 'block';
+            html2pdf().from(bill).save(`Bill_${Date.now()}.pdf`).then(() => bill.style.display = 'none');
         };
+
+        window.sendWhatsApp = () => {
+            const phone = prompt("Customer Phone (94xxxxxxxxx):");
+            if(!phone) return;
+            let msg = `*DULA PRINTERS RECEIPT*\nDate: ${new Date(lastOrder.timestamp).toLocaleString()}\n--------------------\n`;
+            lastOrder.items.forEach(i => msg += `${i.name} x${i.qty} = Rs.${i.price * i.qty}\n`);
+            msg += `--------------------\n*TOTAL: Rs.${lastOrder.total}*\nThank you!`;
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+        };
+
+        window.logout = () => {
+            localStorage.clear();
+            location.reload();
+        };
+
+        // Check local storage
+        const savedUser = localStorage.getItem('cashier');
+        if(savedUser) {
+            currentCashier = savedUser;
+            showSystem();
+        }
+        
+        document.getElementById('current-date').innerText = new Date().toDateString();
+
     </script>
 </body>
 </html>
