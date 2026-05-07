@@ -3,149 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dula Printers POS</title>
+    <title>Dula Printers POS - Cloud System</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #27ae60;
-            --danger: #e74c3c;
-            --light: #f4f7f6;
+            --primary: #1a237e;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --light: #f5f6fa;
+            --dark: #2f3640;
         }
 
-        body { font-family: 'Poppins', sans-serif; background: var(--light); margin: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--light); margin: 0; padding: 0; }
         .hidden { display: none !important; }
 
-        /* Login Styles */
+        /* Login Screen */
         #login-screen {
             height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #2c3e50, #000); color: white;
+            background: linear-gradient(135deg, #1a237e, #000);
         }
-        .login-card { background: white; padding: 2rem; border-radius: 10px; color: #333; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        input[type="password"], input[type="text"] { padding: 10px; width: 80%; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background: var(--accent); color: white; transition: 0.3s; }
-        button:hover { opacity: 0.8; }
-
-        /* Dashboard Styles */
-        nav { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
-        .container { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
-
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .item-btn { 
-            background: white; border: 1px solid #ddd; padding: 15px; border-radius: 8px; 
-            text-align: center; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+        .login-card {
+            background: white; padding: 40px; border-radius: 15px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px;
         }
-        .item-btn:hover { border-color: var(--accent); background: #f0fff4; }
-        .item-price { display: block; color: var(--accent); font-size: 0.8rem; }
+        input[type="password"], input[type="text"], input[type="number"] {
+            width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;
+        }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .btn-main { background: var(--primary); color: white; width: 100%; }
+        .btn-success { background: var(--secondary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
 
-        /* Cart & Receipt */
-        .cart-panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        /* Main Dashboard */
+        nav { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         
-        #receipt-render { 
-            background: white; padding: 20px; width: 300px; border: 1px solid #eee; 
-            margin-top: 20px; font-family: monospace; 
-        }
+        .main-container { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 20px; max-width: 1400px; margin: auto; }
 
-        /* Reports */
-        .reports-section { padding: 20px; background: white; margin-top: 20px; border-radius: 10px; }
-        .summary-boxes { display: flex; gap: 15px; margin-bottom: 20px; }
-        .box { padding: 15px; border-radius: 8px; color: white; flex: 1; }
+        /* Left Side: Items & Search */
+        .search-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .item-card {
+            background: white; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer;
+            border: 2px solid transparent; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .item-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+        .item-card h4 { margin: 5px 0; font-size: 0.9rem; }
+        .item-card span { color: var(--secondary); font-weight: bold; }
+
+        /* Right Side: Cart */
+        .cart-section { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: fit-content; position: sticky; top: 20px; }
+        .cart-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .cart-table th, .cart-table td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        
+        /* Reports Section */
+        .report-section { background: white; padding: 25px; border-radius: 15px; margin: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .report-box { padding: 20px; border-radius: 10px; color: white; text-align: center; }
         .bg-day { background: #3498db; }
         .bg-month { background: #9b59b6; }
-        .bg-year { background: #f1c40f; color: #333; }
-        
-        .delete-btn { background: var(--danger); font-size: 0.7rem; }
+        .bg-year { background: #e67e22; }
+
+        /* Invoice styles for JPEG */
+        #invoice-template { padding: 30px; width: 350px; background: white; color: black; font-family: 'Courier New', Courier, monospace; }
+        .invoice-header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-card">
-            <h2>Dula Printers</h2>
-            <p>Enter Employee PIN to Access</p>
-            <input type="password" id="pin-input" placeholder="Enter PIN">
-            <br>
-            <button onclick="checkLogin()">Login</button>
-            <p id="login-err" style="color:red; font-size: 0.8rem;"></p>
+            <h2 style="margin-top:0">DULA PRINTERS</h2>
+            <p>මුරපදය ඇතුළත් කරන්න (PIN)</p>
+            <input type="password" id="pin-input" placeholder="0000">
+            <button class="btn btn-main" onclick="login()">පිවිසෙන්න</button>
+            <p id="login-error" style="color:red; font-size: 0.8rem; margin-top:10px;"></p>
         </div>
     </div>
 
-    <div id="main-system" class="hidden">
+    <div id="pos-system" class="hidden">
         <nav>
-            <h3>Dula Printers POS</h3>
+            <h2 style="margin:0">DULA PRINTERS POS</h2>
             <div>
-                <span id="user-display">Staff</span> | 
-                <button class="delete-btn" onclick="logout()">Logout</button>
+                <span id="staff-name">පරිශීලක: Staff</span> | 
+                <button class="btn btn-danger" onclick="logout()" style="padding: 5px 15px;">Logout</button>
             </div>
         </nav>
 
-        <div class="container">
-            <div>
-                <h4>Services & Products</h4>
-                <div class="items-grid" id="items-menu">
+        <div class="main-container">
+            <div class="items-column">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="භාණ්ඩය සොයන්න හෝ නම ටයිප් කරන්න..." onkeyup="filterItems()">
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="number" id="custom-price" placeholder="මිල (රු.)">
+                        <button class="btn btn-success" onclick="addCustomItem()">එකතු කරන්න</button>
+                    </div>
+                </div>
+
+                <div class="item-grid" id="product-grid">
                     </div>
 
-                <div class="reports-section">
-                    <h4>Sales Reports</h4>
-                    <div class="summary-boxes">
-                        <div class="box bg-day">Daily: <span id="day-total">0</span></div>
-                        <div class="box bg-month">Monthly: <span id="month-total">0</span></div>
-                        <div class="box bg-year">Yearly: <span id="year-total">0</span></div>
+                <div class="report-section">
+                    <h3>විකුණුම් වාර්තා (Sales Reports)</h3>
+                    <div class="report-grid">
+                        <div class="report-box bg-day">අද: <br> රු. <span id="day-total">0</span></div>
+                        <div class="report-box bg-month">මෙම මස: <br> රු. <span id="month-total">0</span></div>
+                        <div class="report-box bg-year">මෙම වසර: <br> රු. <span id="year-total">0</span></div>
                     </div>
-                    <table id="sales-table">
+                    <table class="cart-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Total (Rs.)</th>
-                                <th>Action</th>
+                                <th>දිනය</th>
+                                <th>මුළු එකතුව</th>
+                                <th>ක්‍රියාව</th>
                             </tr>
                         </thead>
-                        <tbody id="sales-history"></tbody>
+                        <tbody id="sales-history-body"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="cart-panel">
-                <h4>Current Bill</h4>
-                <table id="cart-table">
-                    <thead>
-                        <tr><th>Item</th><th>Qty</th><th>Sub</th></tr>
-                    </thead>
-                    <tbody id="cart-body"></tbody>
-                </table>
-                <h3 style="text-align: right;">Total: රු.<span id="cart-total">0</span></h3>
-                
-                <input type="text" id="cust-phone" placeholder="Customer WhatsApp (e.g. 94771234567)">
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button onclick="checkout()">Finish & Save</button>
-                    <button style="background: #25D366;" onclick="shareWhatsApp()">Send WhatsApp</button>
-                    <button style="background: #333;" onclick="downloadJPEG()">Download Invoice (JPEG)</button>
-                    <button style="background: #95a5a6;" onclick="clearCart()">Clear Cart</button>
+            <div class="cart-section">
+                <h3>වත්මන් බිල්පත</h3>
+                <div id="cart-items-list" style="max-height: 300px; overflow-y: auto;">
+                    <table class="cart-table">
+                        <tbody id="cart-body"></tbody>
+                    </table>
+                </div>
+                <hr>
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
+                    <span>මුළු එකතුව:</span>
+                    <span>රු. <span id="grand-total">0</span></span>
                 </div>
 
-                <div id="receipt-capture-area" style="position: absolute; left: -9999px;">
-                    <div id="receipt-render">
-                        <h2 style="text-align: center;">DULA PRINTERS</h2>
-                        <p style="text-align: center; font-size: 0.8rem;">Invoice</p>
-                        <hr>
-                        <div id="receipt-items"></div>
-                        <hr>
-                        <h3 id="receipt-total-display"></h3>
-                        <p style="text-align: center; font-size: 0.7rem;">Thank You! Come Again.</p>
+                <div style="margin-top: 20px;">
+                    <input type="text" id="customer-phone" placeholder="WhatsApp අංකය (e.g. 9477xxxxxxx)">
+                    <button class="btn btn-main" onclick="completeSale()" style="margin-bottom: 10px;">බිල්පත අවසන් කරන්න</button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn btn-success" onclick="shareWhatsApp()">WhatsApp</button>
+                        <button class="btn btn-success" onclick="shareSMS()" style="background:#2980b9">Direct SMS</button>
+                        <button class="btn btn-danger" onclick="downloadInvoiceJPEG()" style="grid-column: span 2; background:#e67e22">Download Bill (JPEG)</button>
                     </div>
+                    <button class="btn btn-danger" onclick="clearCart()" style="width: 100%; margin-top: 10px;">මකන්න (Clear)</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        // Firebase Integration
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <div id="capture-container" style="position: absolute; left: -9999px;">
+        <div id="invoice-template">
+            <div class="invoice-header">
+                <h2>DULA PRINTERS</h2>
+                <p>විකුණුම් බිල්පත</p>
+                <p id="inv-date"></p>
+            </div>
+            <table style="width:100%; margin: 20px 0;">
+                <tbody id="inv-items"></tbody>
+            </table>
+            <div style="text-align: right; font-weight: bold; border-top: 1px solid #000; padding-top: 10px;">
+                මුළු එකතුව: රු. <span id="inv-total">0</span>
+            </div>
+            <p style="text-align: center; margin-top: 30px; font-size: 0.8rem;">ස්තුතියි! නැවත එන්න.</p>
+        </div>
+    </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // ඔබ ලබාදුන් Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDQ1IbJszeK7LmrJLprR9XgeKtkBdC5ZeI",
             authDomain: "dulapos-b4724.firebaseapp.com",
@@ -160,120 +190,147 @@
         const db = getDatabase(app);
         const salesRef = ref(db, 'sales');
 
-        // Products Data
+        // භාණ්ඩ ලැයිස්තුව
         const products = [
             { name: "Color Print", price: 30 },
-            { name: "B&W Print", price: 20 },
-            { name: "Video Editing", price: 100 },
-            { name: "AI Video Ad", price: 120 },
-            { name: "Web Develop", price: 200 },
-            { name: "Photocopy", price: 10 },
-            { name: "Atlas Pen", price: 30 },
-            { name: "Tipex", price: 40 },
-            { name: "Pencil", price: 25 },
-            { name: "Passport Photo", price: 100 },
+            { name: "Black & White", price: 20 },
+            { name: "VIDEO EDITING", price: 100 },
+            { name: "AI VIDEO AD", price: 120 },
+            { name: "WEB DEVELOPING", price: 200 },
+            { name: "PHOTO COPY", price: 10 },
+            { name: "ATLAS PEN", price: 30 },
+            { name: "TIPEX", price: 40 },
+            { name: "PENCIL", price: 25 },
+            { name: "PASSPORT PHOTO", price: 100 },
             { name: "Photo Restore", price: 120 }
         ];
 
         let cart = [];
-        const MASTER_PIN = "0199";
+        const PIN = "0199";
 
-        // Login Logic
-        window.checkLogin = () => {
-            const pin = document.getElementById('pin-input').value;
-            if(pin === MASTER_PIN) {
+        // ලොගින් කිරීම
+        window.login = () => {
+            const input = document.getElementById('pin-input').value;
+            if(input === PIN) {
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-system').classList.remove('hidden');
-                loadReports();
+                document.getElementById('pos-system').classList.remove('hidden');
+                loadSalesData();
             } else {
-                document.getElementById('login-err').innerText = "Invalid PIN!";
+                document.getElementById('login-error').innerText = "වැරදි PIN අංකයකි!";
             }
         };
 
         window.logout = () => { location.reload(); };
 
-        // UI Generation
-        const menu = document.getElementById('items-menu');
-        products.forEach(p => {
-            const btn = document.createElement('div');
-            btn.className = 'item-btn';
-            btn.innerHTML = `${p.name} <span class="item-price">රු.${p.price}</span>`;
-            btn.onclick = () => addToCart(p);
-            menu.appendChild(btn);
-        });
+        // භාණ්ඩ පෙන්වීම
+        function renderProducts(data = products) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `<h4>${item.name}</h4><span>රු. ${item.price}</span>`;
+                div.onclick = () => addToCart(item.name, item.price);
+                grid.appendChild(div);
+            });
+        }
+        renderProducts();
 
-        function addToCart(product) {
-            const existing = cart.find(i => i.name === product.name);
+        // සෙවීම
+        window.filterItems = () => {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            renderProducts(filtered);
+        };
+
+        // Custom Item එකතු කිරීම
+        window.addCustomItem = () => {
+            const name = document.getElementById('search-input').value || "Custom Item";
+            const price = parseInt(document.getElementById('custom-price').value);
+            if(!price) return alert("මිල ඇතුළත් කරන්න");
+            addToCart(name, price);
+        };
+
+        // Cart එකට එකතු කිරීම
+        function addToCart(name, price) {
+            const existing = cart.find(i => i.name === name);
             if(existing) {
                 existing.qty++;
             } else {
-                cart.push({...product, qty: 1});
+                cart.push({ name, price, qty: 1 });
             }
-            renderCart();
+            updateCartUI();
         }
 
-        function renderCart() {
+        function updateCartUI() {
             const body = document.getElementById('cart-body');
-            const receiptItems = document.getElementById('receipt-items');
-            body.innerHTML = '';
-            receiptItems.innerHTML = '';
             let total = 0;
-
-            cart.forEach(item => {
-                const sub = item.price * item.qty;
-                total += sub;
-                body.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${sub}</td></tr>`;
-                receiptItems.innerHTML += `<div style="display:flex; justify-content:space-between">
-                    <span>${item.name} x${item.qty}</span><span>රු.${sub}</span>
-                </div>`;
+            body.innerHTML = '';
+            cart.forEach((item, index) => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                body.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>x${item.qty}</td>
+                        <td>${subtotal}</td>
+                        <td><button onclick="removeFromCart(${index})" style="color:red; border:none; background:none; cursor:pointer">X</button></td>
+                    </tr>
+                `;
             });
-
-            document.getElementById('cart-total').innerText = total;
-            document.getElementById('receipt-total-display').innerText = `Total: රු.${total}`;
+            document.getElementById('grand-total').innerText = total;
         }
 
-        window.clearCart = () => { cart = []; renderCart(); };
+        window.removeFromCart = (index) => {
+            cart.splice(index, 1);
+            updateCartUI();
+        };
 
-        // Database & Reporting
-        window.checkout = () => {
-            if(cart.length === 0) return alert("Cart is empty");
+        window.clearCart = () => { cart = []; updateCartUI(); };
+
+        // විකුණුම් අවසන් කිරීම (Save to Firebase)
+        window.completeSale = () => {
+            if(cart.length === 0) return alert("බිල්පත හිස් ය!");
             
+            const total = parseInt(document.getElementById('grand-total').innerText);
             const saleData = {
                 items: cart,
-                total: parseInt(document.getElementById('cart-total').innerText),
+                total: total,
                 timestamp: Date.now(),
-                dateStr: new Date().toLocaleDateString()
+                date: new Date().toLocaleDateString(),
+                month: new Date().getMonth() + 1,
+                year: new Date().getFullYear()
             };
 
             push(salesRef, saleData).then(() => {
-                alert("Sale Saved Successfully!");
+                alert("විකුණුම සාර්ථකව සුරැකුණි!");
                 clearCart();
             });
         };
 
-        function loadReports() {
+        // වාර්තා සහ ඉතිහාසය ලබාගැනීම
+        function loadSalesData() {
             onValue(salesRef, (snapshot) => {
                 const data = snapshot.val();
-                const historyBody = document.getElementById('sales-history');
+                const historyBody = document.getElementById('sales-history-body');
                 historyBody.innerHTML = '';
                 
                 let daySum = 0, monthSum = 0, yearSum = 0;
-                const now = new Date();
+                const today = new Date().toLocaleDateString();
+                const curMonth = new Date().getMonth() + 1;
+                const curYear = new Date().getFullYear();
 
-                for(let id in data) {
-                    const sale = data[id];
-                    const saleDate = new Date(sale.timestamp);
-                    
-                    // Logic for totals
-                    if(saleDate.toDateString() === now.toDateString()) daySum += sale.total;
-                    if(saleDate.getMonth() === now.getMonth() && saleDate.getFullYear() === now.getFullYear()) monthSum += sale.total;
-                    if(saleDate.getFullYear() === now.getFullYear()) yearSum += sale.total;
+                for(let key in data) {
+                    const s = data[key];
+                    if(s.date === today) daySum += s.total;
+                    if(s.month === curMonth && s.year === curYear) monthSum += s.total;
+                    if(s.year === curYear) yearSum += s.total;
 
                     historyBody.innerHTML += `
                         <tr>
-                            <td>${sale.dateStr}</td>
-                            <td>${sale.total}</td>
-                            <td><button class="delete-btn" onclick="deleteSale('${id}')">Delete</button></td>
+                            <td>${s.date}</td>
+                            <td>රු. ${s.total}</td>
+                            <td><button class="btn btn-danger" onclick="deleteSale('${key}')" style="padding:2px 8px">මකන්න</button></td>
                         </tr>
                     `;
                 }
@@ -283,34 +340,44 @@
             });
         }
 
-        window.deleteSale = (id) => {
-            if(confirm("Are you sure you want to delete this record?")) {
-                remove(ref(db, 'sales/' + id));
+        window.deleteSale = (key) => {
+            if(confirm("මෙම වාර්තාව මැකීමට අවශ්‍යද?")) {
+                remove(ref(db, 'sales/' + key));
             }
         };
 
-        // Export Functions
-        window.downloadJPEG = () => {
-            const area = document.getElementById('receipt-render');
-            html2canvas(area).then(canvas => {
+        // WhatsApp සහ SMS
+        window.shareWhatsApp = () => {
+            const phone = document.getElementById('customer-phone').value;
+            if(!phone) return alert("අංකය ඇතුළත් කරන්න (e.g. 94771234567)");
+            let msg = "*DULA PRINTERS INVOICE*%0A";
+            cart.forEach(i => msg += `${i.name} x ${i.qty} = ${i.price * i.qty}%0A`);
+            msg += "*Total: රු. " + document.getElementById('grand-total').innerText + "*";
+            window.open(`https://wa.me/${phone}?text=${msg}`);
+        };
+
+        window.shareSMS = () => {
+            const phone = document.getElementById('customer-phone').value;
+            let msg = "DULA PRINTERS: Total Bill is Rs. " + document.getElementById('grand-total').innerText;
+            window.open(`sms:${phone}?body=${msg}`);
+        };
+
+        // JPEG Download
+        window.downloadInvoiceJPEG = () => {
+            const invItems = document.getElementById('inv-items');
+            invItems.innerHTML = '';
+            cart.forEach(i => {
+                invItems.innerHTML += `<tr><td>${i.name} x${i.qty}</td><td style="text-align:right">${i.price * i.qty}</td></tr>`;
+            });
+            document.getElementById('inv-total').innerText = document.getElementById('grand-total').innerText;
+            document.getElementById('inv-date').innerText = new Date().toLocaleString();
+
+            html2canvas(document.getElementById('invoice-template')).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `Dula_Invoice_${Date.now()}.jpg`;
+                link.download = 'Dula_Invoice_' + Date.now() + '.jpg';
                 link.href = canvas.toDataURL("image/jpeg");
                 link.click();
             });
-        };
-
-        window.shareWhatsApp = () => {
-            const phone = document.getElementById('cust-phone').value;
-            if(!phone) return alert("Enter WhatsApp Number (with country code, e.g., 947...)");
-            
-            let text = "*DULA PRINTERS INVOICE*%0A--------------------------%0A";
-            cart.forEach(i => {
-                text += `${i.name} x ${i.qty} = රු.${i.price * i.qty}%0A`;
-            });
-            text += `--------------------------%0A*TOTAL: රු.${document.getElementById('cart-total').innerText}*`;
-            
-            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
         };
 
     </script>

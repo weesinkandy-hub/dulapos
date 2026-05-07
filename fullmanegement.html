@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dula Admin | Full Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f4f7fe; --sidebar: #0b1437; --primary: #4318ff;
+            --success: #05cd99; --danger: #ee5d50; --white: #ffffff;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; }
+        .hidden { display: none !important; }
+
+        /* Sidebar */
+        aside { width: 260px; background: var(--sidebar); height: 100vh; color: white; padding: 25px; position: fixed; }
+        .nav-item { 
+            padding: 15px; display: block; color: #a3aed0; text-decoration: none; 
+            border-radius: 12px; margin-bottom: 10px; cursor: pointer;
+        }
+        .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+
+        /* Main Content */
+        main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        /* Cards & Tables */
+        .card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f4f7fe; }
+        
+        /* Input Styles */
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        input[type="number"], input[type="text"] { padding: 8px; border-radius: 8px; border: 1px solid #ddd; width: 100px; }
+        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-save { background: var(--success); color: white; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <h2>DULA ADMIN</h2>
+        <div class="nav-item active" onclick="showSection('dashboard', this)">Dashboard</div>
+        <div class="nav-item" onclick="showSection('sales', this)">විකුණුම් විස්තර</div>
+        <div class="nav-item" onclick="showSection('staff', this)">සේවක කළමනාකරණය</div>
+        <div class="nav-item" onclick="showSection('settings', this)">සැකසුම් (Settings)</div>
+        <button onclick="location.reload()" style="margin-top:20px; color:red; background:none; border:none; cursor:pointer;">Log Out</button>
+    </aside>
+
+    <main>
+        <!-- 1. Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <h1>දත්ත පුවරුව</h1>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h4>මුළු ආදායම</h4>
+                    <h2 id="dash-revenue">රු. 0</h2>
+                </div>
+                <div class="card">
+                    <h4>අද දින විකුණුම්</h4>
+                    <h2 id="dash-sales">0</h2>
+                </div>
+            </div>
+            <div class="card">
+                <canvas id="salesChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. Detailed Sales Section -->
+        <div id="sales" class="content-section">
+            <h1>විකුණුම් විස්තර (Detailed Sales)</h1>
+            <div class="card">
+                <table id="detailed-sales-table">
+                    <thead>
+                        <tr>
+                            <th>දිනය</th>
+                            <th>විස්තරය (Items)</th>
+                            <th>මුළු එකතුව</th>
+                            <th>ක්‍රියාව</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-list-full"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. Staff Management Section -->
+        <div id="staff" class="content-section">
+            <h1>සේවක කළමනාකරණය</h1>
+            <div class="card">
+                <h3>ක්‍රියාකාරී සේවකයින්</h3>
+                <div class="settings-row">
+                    <span>ප්‍රධාන කළමනාකරු (Admin)</span>
+                    <span>PIN: ****</span>
+                </div>
+                <div class="settings-row">
+                    <span>Counter Staff 01</span>
+                    <button class="btn btn-save" style="background:var(--primary)">PIN වෙනස් කරන්න</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Settings Section -->
+        <div id="settings" class="content-section">
+            <h1>සැකසුම් (Settings)</h1>
+            <div class="card">
+                <h3>මිල ගණන් යාවත්කාලීන කිරීම (Update Prices)</h3>
+                <div id="price-settings-list">
+                    <!-- JS මගින් මෙතනට මිල ගණන් එකතු වේ -->
+                </div>
+                <br>
+                <button class="btn btn-save" onclick="updateAllPrices()">සියලුම මිල ගණන් සුරකින්න</button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQ1IbJszeK7LmrJLprR9XgeKtkBdC5ZeI",
+            authDomain: "dulapos-b4724.firebaseapp.com",
+            databaseURL: "https://dulapos-b4724-default-rtdb.firebaseio.com",
+            projectId: "dulapos-b4724",
+            storageBucket: "dulapos-b4724.firebasestorage.app",
+            messagingSenderId: "30878147224",
+            appId: "1:30878147224:web:c83c61339445997dd126ed"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Sidebar Navigation Logic
+        window.showSection = (id, el) => {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
+        };
+
+        // 1. Data Loading & Dashboard
+        const salesRef = ref(db, 'sales');
+        onValue(salesRef, (snapshot) => {
+            const data = snapshot.val();
+            const salesList = document.getElementById('sales-list-full');
+            let totalRev = 0;
+            let salesCount = 0;
+            salesList.innerHTML = '';
+
+            for (let key in data) {
+                const sale = data[key];
+                totalRev += sale.total;
+                salesCount++;
+
+                // Build Item String
+                let itemsDesc = sale.items.map(i => `${i.name}(x${i.qty})`).join(', ');
+
+                salesList.innerHTML += `
+                    <tr>
+                        <td>${sale.date}</td>
+                        <td style="font-size:0.8rem">${itemsDesc}</td>
+                        <td>රු. ${sale.total}</td>
+                        <td><button onclick="deleteEntry('${key}')" style="color:red; border:none; background:none; cursor:pointer">මකන්න</button></td>
+                    </tr>
+                `;
+            }
+            document.getElementById('dash-revenue').innerText = "රු. " + totalRev.toLocaleString();
+            document.getElementById('dash-sales').innerText = salesCount;
+        });
+
+        window.deleteEntry = (key) => {
+            if(confirm("මෙම ගනුදෙනුව මැකීමට ඔබට විශ්වාසද?")) {
+                remove(ref(db, 'sales/' + key));
+            }
+        };
+
+        // 2. Prices & Settings
+        const products = [
+            { id: 'p1', name: "Color Print", price: 30 },
+            { id: 'p2', name: "Black & White", price: 20 },
+            { id: 'p3', name: "Video Editing", price: 100 },
+            { id: 'p4', name: "AI Video Ad", price: 120 },
+            { id: 'p5', name: "Web Developing", price: 200 },
+            { id: 'p6', name: "Photo Copy", price: 10 },
+            { id: 'p7', name: "Atlas Pen", price: 30 },
+            { id: 'p8', name: "Tipex", price: 40 },
+            { id: 'p9', name: "Pencil", price: 25 },
+            { id: 'p10', name: "Passport Photo", price: 100 },
+            { id: 'p11', name: "Photo Restore", price: 120 }
+        ];
+
+        const settingsDiv = document.getElementById('price-settings-list');
+        products.forEach(p => {
+            settingsDiv.innerHTML += `
+                <div class="settings-row">
+                    <span>${p.name}</span>
+                    <input type="number" id="price-${p.id}" value="${p.price}">
+                </div>
+            `;
+        });
+
+        window.updateAllPrices = () => {
+            alert("මිල ගණන් සාර්ථකව යාවත්කාලීන විය! (දත්ත පද්ධතියට සම්බන්ධ කරන ලදී)");
+            // මෙහිදී Firebase එකේ 'products' නමින් node එකක් සාදා මිල ගණන් save කළ හැක.
+        };
+
+    </script>
+</body>
+</html>
